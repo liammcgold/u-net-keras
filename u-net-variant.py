@@ -1,15 +1,16 @@
 import keras as k
-import tensorflow as tf
-import numpy as np
-import code
+import path_join as pj
+
 
 
 def make():
 
     raw_input=k.layers.Input((16,128,128,1))
 
-    #input=k.backend.permute_dimensions(raw_input,(0,2,3,4,1))
 
+    #########################
+    #   Small Kernel Path   #
+    #########################
 
     #c0
     c0=k.layers.Conv3D(8,(1,3,3),padding="same",activation="relu")(raw_input)
@@ -89,13 +90,57 @@ def make():
     mc2mp = k.layers.Conv3D(3, (3,3,3), padding="same", activation="relu")(m2)
     mc2m = k.layers.add([mc2mp, mc21])
 
-    out=k.layers.LeakyReLU()(mc2m)
+    o0 = k.layers.LeakyReLU()(mc2m)
 
+    #########################
+    #   Large Kernel Path   #
+    #########################
 
+    #cl0
+    cl0=k.layers.Conv3D(8,(16,16,16),padding="same",activation="relu")(raw_input)
+    cl00=k.layers.Conv3D(8,(16,16,16),padding="same",activation="relu")(cl0)
+    cl01 = k.layers.Conv3D(8, (16, 16, 16), padding="same", activation="relu")(cl00)
+    cl0mp = k.layers.Conv3D(8, (16, 16, 16), padding="same", activation="relu")(raw_input)
+    cl0m= k.layers.add([cl0mp,cl01])
+
+    #dl0
+    dl0=k.layers.MaxPool3D([1,2,2])(cl0m)
+
+    # cl1
+    cl1 = k.layers.Conv3D(8, (16, 16, 16), padding="same", activation="relu")(dl0)
+    cl10 = k.layers.Conv3D(32, (16, 16, 16), padding="same", activation="relu")(cl1)
+    cl11 = k.layers.Conv3D(8, (16, 16, 16), padding="same", activation="relu")(cl10)
+    cl1mp = k.layers.Conv3D(8, (16, 16, 16), padding="same", activation="relu")(dl0)
+    cl1m = k.layers.add([cl1mp, cl11])
+
+    #ml0
+    ul0=k.layers.UpSampling3D([1,2,2])(cl1m)
+    ml0p=k.layers.LeakyReLU()(ul0)
+    cl0mp0=k.layers.LeakyReLU()(cl0m)
+    ml0=k.layers.add([ml0p,cl0mp0])
+
+    #mcl0
+    mcl0 = k.layers.Conv3D(3, (16, 16, 16), padding="same", activation="relu")(ml0)
+    mcl00 = k.layers.Conv3D(3, (16, 16, 16), padding="same", activation="relu")(mcl0)
+    mcl01 = k.layers.Conv3D(3, (16, 16, 16), padding="same", activation="relu")(mcl00)
+    mcl0mp = k.layers.Conv3D(3, (16, 16, 16), padding="same", activation="relu")(ml0)
+    mcl0m = k.layers.add([mcl0mp, mcl01])
+
+    o1=k.layers.LeakyReLU()(mcl0m)
+
+    #################
+    #   Join Paths  #
+    #################
+
+    join=pj.path_join(o0,o1,3)
+    out=k.layers.LeakyReLU()(join)
 
     model=k.models.Model(inputs=raw_input,outputs=out)
 
     print(model.summary())
 
+    k.utils.plot_model(model,"model_variant.png",show_shapes=True)
+
     return model
 
+make()
