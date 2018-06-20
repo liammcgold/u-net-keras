@@ -2,7 +2,7 @@
 # -*- coding: latin-1 -*-
 
 import numpy as np
-import make_net as make
+import u_net_LK as make
 import random_provider as rp
 import keras as k
 import custom_loss as cl
@@ -60,7 +60,7 @@ model.compile(loss=WCE.weighted_cross,optimizer=adam,metrics=['accuracy'])
     #   run model   #
     #################
 
-
+k.utils.plot_model(model, "model_variant_a.png", show_shapes=True)
 
 #run until terminated
 a=1
@@ -78,6 +78,8 @@ while(a==1):
         #############
 
     model.fit(raw_in,aff_in,epochs=1)
+
+
 
         #############################
         #  test and export images   #
@@ -109,19 +111,19 @@ while(a==1):
 
     if (i < 100):
         if (i % 10 == 0):
-            model.save("./saved_models/model%i"%i)
+            model.save("./saved_models_LK/model%i"%i)
     if (i >= 100 and i < 1000):
         if (i % 100 == 0):
-            model.save("./saved_models/model%i" % i)
+            model.save("./saved_models_LK/model%i" % i)
     if (i >= 1000 and i < 1000):
         if (i % 1000 == 0):
-            model.save("./saved_models/model%i" % i)
+            model.save("./saved_models_LK/model%i" % i)
     if (i >= 10000 and i < 100000):
         if (i % 5000 == 0):
-            model.save("./saved_models/model%i" % i)
+            model.save("./saved_models_LK/model%i" % i)
     if (i >= 100000):
         if (i % 20000 == 0):
-            model.save("./saved_models/model%i" % i)
+            model.save("./saved_models_LK/model%i" % i)
 
     print("Iteration: %i"%i)
     i+=1
