@@ -6,9 +6,9 @@ import tifffile as tif
 import filter as fil
 
 
-thresh=0.6
-thresh_l=0.2
-thresh_h=0.9
+thresh=0.5
+thresh_l=0.0000001
+thresh_h=0.99999999999
 
 filter_thresh=200
 
@@ -71,4 +71,4 @@ if truth_table==0:
 
 
 for i in range(0,np.shape(seg)[0]):
-    tif.imsave("watershed_tiffs/pred%i"%i,np.asarray(seg[i],dtype=np.float32))
+    tif.imsave("watershed_tiffs/pred%i.tiff"%i,np.asarray(seg[i],dtype=np.float32))

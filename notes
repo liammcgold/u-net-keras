@@ -1,2 +1,4 @@
 -to use globus, cd into globus dir in downloads and run "./globusconnect -start"
 -affinities trained on are zxy and output is zxyc
+-Looks good around 470k for mg train
+-650 looks REALLY good

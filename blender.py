@@ -6,22 +6,22 @@ def blend(arr_1,arr_2,dir,overlap):
     '''
     DIRECTION INDICATES WHERE arr_2 is to be appended
     EX:
-            "x-"
+            "1-"
 
         arr2->arr1
 
-            "x+"
+            "1+"
 
         arr1<-arr2
 
-            "y-"
+            "2-"
 
         arr1
           ^
           |
         arr2
 
-            "y+"
+            "2+"
 
         arr2
           |
@@ -42,32 +42,32 @@ def blend(arr_1,arr_2,dir,overlap):
 
 
 
-    possible=np.asarray(["z+","z-","x+","x-","y+","y-"])
+    possible=np.asarray(["0+","0-","1+","1-","1+","1-"])
 
     assert (dir==possible).any, "INVALID DIRECTION"
 
     arr_b=np.asarray(9999999999)
 
-    if(dir=="z+"):
+    if(dir=="0+"):
         arr_1=np.einsum("czxy->cxzy",arr_1)
         arr_2=np.einsum("czxy->cxzy",arr_2)
         arr_b=xblend(arr_1,arr_2,overlap)
         arr_b=np.einsum("cxzy->czxy",arr_b)
-    if(dir=="z-"):
+    if(dir=="0-"):
         arr_1 = np.einsum("czxy->cxzy", arr_1)
         arr_2 = np.einsum("czxy->cxzy", arr_2)
         arr_b = xblend(arr_2, arr_1, overlap)
         arr_b = np.einsum("cxzy->czxy", arr_b)
-    if(dir=="x+"):
+    if(dir=="1+"):
         arr_b=xblend(arr_1,arr_2,overlap)
-    if(dir=="x-"):
+    if(dir=="1-"):
         arr_b=xblend(arr_2,arr_1,overlap)
-    if(dir=="y+"):
+    if(dir=="2+"):
         arr_1 = np.einsum("czxy->czyx", arr_1)
         arr_2 = np.einsum("czxy->czyx", arr_2)
         arr_b = xblend(arr_1, arr_2, overlap)
         arr_b = np.einsum("czyx->czxy", arr_b)
-    if(dir=="y-"):
+    if(dir=="2-"):
         arr_1 = np.einsum("czxy->czyx", arr_1)
         arr_2 = np.einsum("czxy->czyx", arr_2)
         arr_b = xblend(arr_2, arr_1, overlap)

@@ -24,7 +24,7 @@ def filter(seg,thresh):
     kill_list=np.unique(kill_list)
     kill_count=0
 
-    new_seg[(new_seg==kill_list)]=1
+    new_seg[(new_seg==kill_list).any()]=1
 
 
     print("Killed %i supervoxels "%np.shape(kill_list)[0])
