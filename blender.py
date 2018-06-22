@@ -94,8 +94,8 @@ def xblend(arr_1,arr_2,overlap):
     ovrlp_comb = np.add(ovrlp_1, ovrlp_2)
 
     # where does overlap begin index
-    point_1 = np.shape(arr_1)[1] - overlap_size - 1
-    point_2 = np.shape(arr_1)[1] - 1
+    point_1 = np.shape(arr_1)[2] - overlap_size - 1
+    point_2 = np.shape(arr_1)[2] - 1
     point_3 = overlap_size - 1
 
     # add front 0->p1

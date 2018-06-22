@@ -29,18 +29,15 @@ class assembler(object):
 
         self.current_loc=self.get_raw_cordinates()
 
-
-
-
     def calc_total_blocks(self):
         total_blocks = self.num_blocks[0] * self.num_blocks[1] * self.num_blocks[2]
         return total_blocks
 
     def generate_empty_aff_graph(self):
         aff_graph = np.zeros((3,
-                              int(self.num_blocks[0] + self.padding[0]),
-                              int(self.num_blocks[1] + self.padding[1]),
-                              int(self.num_blocks[2] + self.padding[2])
+                              int(self.raw_shape[0]+ self.padding[0]*self.shape[0]),
+                              int(self.raw_shape[1]+ self.padding[1]*self.shape[1]),
+                              int(self.raw_shape[2]+ self.padding[2]*self.shape[2])
                               ))
         return aff_graph
 
@@ -52,7 +49,7 @@ class assembler(object):
     def feed(self):
 
 
-        #assert self.stage==0, "CALLED FEED DURRING APPEND STAGE"
+        assert self.stage==0, "CALLED FEED DURRING APPEND STAGE"
 
         if(self.is_full()):
             print("NO MORE BLOCKS")
@@ -63,22 +60,20 @@ class assembler(object):
 
         self.stage=1
 
-        ###REMOVEEEEEE
-        self.increment()
-
 
         return self.raw_block
 
     def increment(self):
         self.counter+=1
         self.dict=self.on_edge()
+        self.full = self.is_full()
+        self.stage=0
         self.current_loc=self.get_raw_cordinates()
 
-    def append(self,aff_slice):
-        assert self.stage==0, "CALLED APPEND DURING FEED STAGE"
-        self.aff_graph=self.blend_block()
-        self.counter+=1
-        self.full=self.is_full()
+    def append(self):
+        assert self.stage==1, "CALLED APPEND DURING FEED STAGE"
+        self.blend_block()
+        self.increment()
 
     def get_block(self):
 
@@ -113,8 +108,7 @@ class assembler(object):
 
         # index notation
         dim_0 = self.counter % self.num_blocks[0]
-        print("COUNTER:    %i" % self.counter)
-        print("NUM BLOCKS: ", self.num_blocks)
+
         dim_1 = math.floor((self.counter % (self.num_blocks[0] * self.num_blocks[1])) / self.num_blocks[0])
         dim_2 = math.floor(self.counter / (self.num_blocks[0] * self.num_blocks[1]))
 
@@ -169,7 +163,9 @@ class assembler(object):
 
         coordinates = np.asarray(coordinates, dtype=np.int)
 
-
+        '''
+        print("COUNTER:    %i" % self.counter)
+        print("NUM BLOCKS: ", self.num_blocks)
         print(dict)
         print("OVERLAP INCREMENT: ", self.overlap_increment)
         print("SLICE START:       ", [start_0, start_1, start_2])
@@ -177,7 +173,8 @@ class assembler(object):
         print("DIMS:              ", [dim_0, dim_1, dim_2])
 
         print("COORDINATES:       ",coordinates)
-
+        print("AFF GRAPH SIZE:    ",np.shape(self.aff_graph))
+        '''
 
         return coordinates
 
@@ -237,10 +234,10 @@ class assembler(object):
         while(self.full==False):
             print("Block %i "%self.counter," of %i"%self.total_blocks)
             self.feed()
-            aff=self.function(self.raw_block)
-            self.append(aff)
-        aff=crop_aff(aff,np.shape(self.raw))
-        return aff
+            self.aff_block=np.asarray(self.function(self.raw_block))
+            self.append()
+        self.crop_aff()
+        return self.aff_graph
 
     def calc_num_blocks(self):
         '''
@@ -276,34 +273,221 @@ class assembler(object):
         else:
             return True
 
+    def blend_axis0(self):
+        #blends current slice with preivous slice on axis0
+
+        ##Go back one overlap increment to find start      ##take start and add the shape to it
+        prev_slice = self.aff_graph[:,
+                     int(self.current_loc[0, 0] - self.overlap_increment[0]):int(self.current_loc[0, 0] - self.overlap_increment[0] + self.shape[0]),
+                     int(self.current_loc[1, 0]):int(self.current_loc[1, 0] + self.shape[1]),
+                     int(self.current_loc[2, 0]):int(self.current_loc[2, 0]+ self.shape[2])]
+
+
+
+        blended_slice = blend.blend(prev_slice, self.aff_block, "0+",self.overlap)
+
+
+
+        self.aff_graph[:,
+        int(self.current_loc[0, 0] - self.overlap_increment[0]):int(self.current_loc[0, 0]- self.overlap_increment[0] + np.shape(blended_slice)[1]),
+        int(self.current_loc[1, 0]):int(self.current_loc[1, 0]+np.shape(blended_slice)[2]),
+        int(self.current_loc[2, 0]):int(self.current_loc[2, 0]+np.shape(blended_slice)[3])] = blended_slice
+
+        return blended_slice
+
+    def blend_axis1(self):
+        # blends current slice with preivous slice on axis0
+
+        ##Go back one overlap increment to find start      ##take start and add the shape to it
+        prev_slice = self.aff_graph[:,
+                     int(self.current_loc[0, 0]):int(self.current_loc[0, 0] + self.shape[0]),
+                     int(self.current_loc[1, 0]- self.overlap_increment[1]):int(self.current_loc[1, 0]-self.overlap_increment[0] + self.shape[1]),
+                     int(self.current_loc[2, 0]):int(self.current_loc[2, 0] + self.shape[2])]
+
+        blended_slice = blend.blend(prev_slice, self.aff_block, "1+",self.overlap)
+
+        self.aff_graph[:,
+        int(self.current_loc[0, 0]):int(self.current_loc[0, 0]+np.shape(blended_slice)[1]),
+        int(self.current_loc[1, 0] - self.overlap_increment[1]):int(self.current_loc[1, 0] - self.overlap_increment[1] + np.shape(blended_slice)[2]),
+        int(self.current_loc[2, 0]):int(self.current_loc[2, 0]+np.shape(blended_slice)[3])] = blended_slice
+        return blended_slice
+
+    def blend_axis2(self):
+        # blends current slice with preivous slice on axis0
+
+        ##Go back one overlap increment to find start      ##take start and add the shape to it
+        prev_slice = self.aff_graph[:,
+                     int(self.current_loc[0, 0]):int(self.current_loc[0, 0] + self.shape[0]),
+                     int(self.current_loc[1, 0]):int(self.current_loc[1, 0] + self.shape[1]),
+                     int(self.current_loc[2, 0]- self.overlap_increment[2]):int(self.current_loc[2, 0]- self.overlap_increment[2] + self.shape[2])]
+
+        blended_slice = blend.blend(prev_slice, self.aff_block, "2+",self.overlap)
+
+        self.aff_graph[:,
+        int(self.current_loc[0, 0]):int(self.current_loc[0, 0]+np.shape(blended_slice)[1]),
+        int(self.current_loc[1, 0]):int(self.current_loc[1, 0]+np.shape(blended_slice)[2]),
+        int(self.current_loc[2, 0]- self.overlap_increment[2]):int(self.current_loc[2, 0]- self.overlap_increment[2]+np.shape(blended_slice)[3])] = blended_slice
+        return blended_slice
+
+    def half_axis1_blend_axis0(self):
+        #takes lower half on axis 2 of section and blends it with previous slice
+
+        #first save current loc because it will be altered
+        temp_loc=self.current_loc
+        temp_aff_block=self.aff_block
+        temp_shape=self.shape
+
+        #redefine
+        self.shape=np.asarray([self.shape[0],int(self.shape[1]/2),self.shape[2]])
+        self.current_loc=np.asarray([self.current_loc[0],self.current_loc[1]+self.shape[1],self.current_loc[2]])
+        self.aff_block=self.aff_block[:,:,-self.shape[1]:,:]
+
+        #blend under new conditions
+        blended_slice=self.blend_axis0()
+
+
+        #take blended half and add to the block
+        temp_aff_block[:, :, -self.shape[1]:,:] = blended_slice[:, -self.shape[0]:, :, :]
+
+        #reassign all values
+        self.current_loc=temp_loc
+        self.aff_block=temp_aff_block
+        self.shape=temp_shape
+        return blended_slice
+
+    def half_axis2_blend_axis0(self):
+        # takes lower half on axis 3 of section and blends it with previous slice
+
+        # first save current loc because it will be altered
+        temp_loc = self.current_loc
+        temp_aff_block = self.aff_block
+        temp_shape = self.shape
+
+        # redefine
+        self.shape = np.asarray([self.shape[0], self.shape[1],int(self.shape[2] / 2)])
+        self.current_loc = np.asarray([self.current_loc[0],self.current_loc[1],self.current_loc[2] + self.shape[2]])
+        self.aff_block = self.aff_block[:, :,:, -self.shape[2]:]
+
+        # blend under new conditions
+        blended_slice = self.blend_axis0()
+
+        # take blended half and add to the block
+        temp_aff_block[:,:,:, -self.shape[2]:] = blended_slice[:,-self.shape[0]:, :, :]
+
+        # reassign all values
+        self.current_loc = temp_loc
+        self.aff_block = temp_aff_block
+        self.shape = temp_shape
+
+        return blended_slice
+
+    def half_axis2_blend_axis1(self):
+        # takes lower half on axis 3 of section and blends it with previous slice
+
+        # first save current loc because it will be altered
+        temp_loc = self.current_loc
+        temp_aff_block = self.aff_block
+        temp_shape = self.shape
+
+        # redefine
+        self.shape = np.asarray([self.shape[0], self.shape[1], int(self.shape[2] / 2)])
+        self.current_loc = np.asarray([self.current_loc[0], self.current_loc[1],self.current_loc[2] + self.shape[2]])
+        self.aff_block = self.aff_block[:, :, :, -self.shape[2]:]
+
+        # blend under new conditions
+        blended_slice = self.blend_axis1()
+
+        # take blended half and add to the block
+        temp_aff_block[:, :, :, -self.shape[2]:] = blended_slice[:, :, -self.shape[1]:, :]
+
+        # reassign all values
+        self.current_loc = temp_loc
+        self.aff_block = temp_aff_block
+        self.shape = temp_shape
+
+    def half_axis2_half_axis1_blend_axis0_blend_axis1(self):
+        #blend half of lower half of block on axis 0
+
+        # first save current loc because it will be altered
+        temp_loc = self.current_loc
+        temp_aff_block = self.aff_block
+        temp_shape = self.shape
+
+        # redefine
+        self.shape = np.asarray([self.shape[0], self.shape[1], int(self.shape[2] / 2)])
+        self.current_loc = np.asarray([self.current_loc[0], self.current_loc[1],self.current_loc[2] + self.shape[2]])
+        self.aff_block = self.aff_block[:, :, :, -self.shape[2]:]
+
+        #now we have lower half so call half axis1 blend
+        self.half_axis1_blend_axis0()
+        #then blend on axis 1
+        blended_slice=self.blend_axis1()
+
+        #at this point bottom half is completely blended and we must appened it to untouched top half
+
+        #take blended half and add to the block
+        temp_aff_block[:, :,:, -self.shape[2]:] = blended_slice[:, :, -self.shape[1]:, :]
+
+
+        # reassign all values
+        self.current_loc = temp_loc
+        self.aff_block = temp_aff_block
+        self.shape = temp_shape
+        return blended_slice
+
     def blend_block(self):
 
         #row is itterated first then column then layer
+        #axis1=row axis2=col axis3=layer
+
+
 
         #if first one add to corner
         if(self.counter==0):
             self.aff_graph[:,0:self.shape[0],0:self.shape[1],0:self.shape[2]]=self.aff_block
 
-        #if in first row column and layer
-        if(dict["+0"]==False and dict["+1"]==True and dict["+2"]==True):
-
-                                        ##Go back one overlap increment to find start      ##take start and add the shape to it
-            prev_slice=self.aff_graph[self.current_loc[0,0]-self.overlap_increment[0]:self.current_loc[0,0]-self.overlap_increment[0]+self.shape[0],
-                                        self.current_loc[1, 0] - self.overlap_increment[1]:self.current_loc[1, 0] -self.overlap_increment[1] + self.shape[1],
-                                            self.current_loc[2, 0] - self.overlap_increment[2]:self.current_loc[2, 0] -self.overlap_increment[2] + self.shape[2]]
-
-            blended_slice=blend.blend(prev_slice,self.aff_block,"+0")
-
-            self.aff_graph[self.current_loc[0,0]-self.overlap_increment[0]:self.current_loc[0,0]-self.overlap_increment[0]+np.shape(blended_slice)[1],
-                            self.current_loc[1, 0] - self.overlap_increment[1]:self.current_loc[1, 0] - self.overlap_increment[1] +np.shape(blended_slice)[2],
-                                self.current_loc[2, 0] - self.overlap_increment[2]:self.current_loc[2, 0] - self.overlap_increment[2] +np.shape(blended_slice)[3],]=blended_slice
+        #if in first column and layer
+        if(self.dict["+0"]==False and self.dict["+1"]==True and self.dict["+2"]==True):
+            self.blend_axis0()
 
 
+        #if in first row but not first column and in first layer
+        if(self.dict["+0"]==True and self.dict["+1"]==False and self.dict["+2"]==True):
+            self.blend_axis1()
+
+        #if not in first row or column but in first layer
+        if(self.dict["+0"]==False and self.dict["+1"]==False and self.dict["+2"]==True):
+            self.half_axis1_blend_axis0()
+            self.blend_axis1()
+
+        #if first row and column but not first layer
+        if (self.dict["+0"] == True and self.dict["+1"] == True and self.dict["+2"] == False):
+            self.blend_axis2()
+
+        #if not first row but fist column and not first layer
+        if (self.dict["+0"] == False and self.dict["+1"] == True and self.dict["+2"] == False):
+            self.half_axis2_blend_axis0()
+            self.blend_axis2()
+
+        #if first row but not first column or layer
+        if (self.dict["+0"] == True and self.dict["+1"] == False and self.dict["+2"] == False):
+            self.half_axis2_blend_axis1()
+            self.blend_axis2()
+
+        #if not first row, column or layer
+        if (self.dict["+0"] == False and self.dict["+1"] == False and self.dict["+2"] == False):
+            #blend bottom half same way as "if not in first row or column but in first layer" then blend axis2
+            self.half_axis2_half_axis1_blend_axis0_blend_axis1()
+            self.blend_axis2()
+
+    def crop_aff(self):
+        print(np.shape(self.aff_graph))
+        self.aff_graph = np.asarray(self.aff_graph)[:, 0:self.raw_shape[0] - 1, 0:self.raw_shape[1] - 1, 0:self.raw_shape[2] - 1]
+        print(np.shape(self.aff_graph))
 
 
 
 
-        #return aff
 
 
 
@@ -311,9 +495,4 @@ class assembler(object):
 
 
 
-def crop_aff(aff,shape):
-
-    assert (np.shape(aff)[1:]>=shape).all(), "Crop size larger than actual size"
-
-    return aff[:,0:shape[0],0:shape[1],0:shape[2]]
 

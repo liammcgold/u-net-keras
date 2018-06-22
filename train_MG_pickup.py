@@ -14,7 +14,7 @@ import sklearn
     #   select model to load #
     ##########################
 
-num = 220000
+num = 660000
 
     #####################
     #   initialize data #

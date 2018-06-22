@@ -1,6 +1,7 @@
 import assembler
 import numpy as np
 import tifffile as tif
+import code
 
 
 a=np.reshape(np.zeros((5,4,6)),(5,4,6))
@@ -29,6 +30,7 @@ a[1:3,0:2,0:2]=b
 
 
 
+
 raw=np.load("data/spir_raw.npy")
 
 
@@ -36,11 +38,20 @@ raw=np.einsum("zxy->xyz",raw)
 
 
 def function(input):
-    return input
+    return np.asarray([input,input,input])
 
-assembler=assembler.assembler(raw,.5,(128,128,16),function)
+builder=assembler.assembler(raw,.5,(128,128,16),function)
 
 
-for i in range(0,400):
-    raw_slice=np.asarray(assembler.feed(),dtype=np.float32)
-    tif.imsave("assembler_testing/slice%i"%i,raw_slice[:,:,0])
+
+aff=builder.process()
+
+#code.interact(local=locals())
+
+raw=np.einsum("xyz->zxy",raw)
+aff=np.einsum("cxyz->czxy",aff)
+
+
+for i in range(0,np.shape(aff)[1]):
+    tif.imsave("assembler_testing/processed/proc%i"%i,np.asarray(aff[0,i,:,:],dtype=np.float32))
+    tif.imsave("assembler_testing/act/act%i"%i,np.asarray(raw[i,:,:],dtype=np.float32))
