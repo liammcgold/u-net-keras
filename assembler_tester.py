@@ -33,8 +33,16 @@ a[1:3,0:2,0:2]=b
 
 raw=np.load("data/spir_raw.npy")
 
+raw=raw[0:25,0:250,0:250]
+
+
 
 raw=np.einsum("zxy->xyz",raw)
+
+#blending on z axis is bad (2 axis)
+#y axis is 2 axis is verticle on images
+#x axis is 0 axis and horizontal on image
+
 
 
 def function(input):
@@ -50,6 +58,9 @@ aff=builder.process()
 
 raw=np.einsum("xyz->zxy",raw)
 aff=np.einsum("cxyz->czxy",aff)
+
+
+assert np.equal(raw,aff[0]).all()
 
 
 for i in range(0,np.shape(aff)[1]):

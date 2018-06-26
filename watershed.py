@@ -6,7 +6,7 @@ import tifffile as tif
 import filter as fil
 
 
-thresh=0.5
+thresh=0.1
 thresh_l=0.0000001
 thresh_h=0.99999999999
 
@@ -30,8 +30,8 @@ temp1=pred[1]
 temp2=pred[2]
 
 pred[0]=temp2
-pred[1]=temp0
-pred[2]=temp1
+pred[1]=temp1
+pred[2]=temp0
 
 aff=np.asarray(aff,dtype=np.float32)
 pred=np.asarray(pred,dtype=np.float32)

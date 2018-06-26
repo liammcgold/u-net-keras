@@ -2,3 +2,5 @@
 -affinities trained on are zxy and output is zxyc
 -Looks good around 470k for mg train
 -650 looks REALLY good
+-780 looks ok, may have gone into overtraining though.
+-Assembler is running however there are irregularities in the output.
