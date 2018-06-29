@@ -1,32 +1,34 @@
 import numpy as np
-
+import time
 
 def filter(seg,thresh):
 
     new_seg=seg
 
     uniques=np.unique(seg)
-    counts=np.zeros(np.shape(uniques)[0])
-    n=0
+
+    dictionary={}
+
     for num in uniques:
-        counts[n]=np.count_nonzero(num==seg)
-        n+=1
-    kill_list=counts
-
-    for n in range(0,np.shape(counts)[0]):
-        if(counts[n]<thresh):
-            kill_list[n]=uniques[n]
-        else:
-            kill_list[n]=0
+        dictionary[num]=0
 
 
+    time_s=time.time()
+    for i in range(0,np.shape(seg)[0]):
+        for j in range(0,np.shape(seg)[1]):
+            for k in range(0,np.shape(seg)[2]):
+                dictionary[seg[i,j,k]]+=1
+    time_c=time.time()-time_s
+    print("time ",time_c)
 
-    kill_list=np.unique(kill_list)
-    kill_count=0
+    time_s = time.time()
+    for i in range(0,np.shape(seg)[0]):
+        for j in range(0,np.shape(seg)[1]):
+            for k in range(0,np.shape(seg)[2]):
+                if(dictionary[seg[i,j,k]]<thresh):
+                    seg[i,j,k]=0
+    time_c = time.time() - time_s
+    print("time ", time_c)
 
-    new_seg[(new_seg==kill_list).any()]=1
-
-
-    print("Killed %i supervoxels "%np.shape(kill_list)[0])
     return new_seg
 

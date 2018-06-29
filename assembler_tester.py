@@ -41,7 +41,7 @@ raw=np.einsum("zxy->xyz",raw)
 
 #blending on z axis is bad (2 axis)
 #y axis is 2 axis is verticle on images
-#x axis is 0 axis and horizontal on image
+#x axis is aff_graph0 axis and horizontal on image
 
 
 
@@ -65,4 +65,4 @@ assert np.equal(raw,aff[0]).all()
 
 for i in range(0,np.shape(aff)[1]):
     tif.imsave("assembler_testing/processed/proc%i"%i,np.asarray(aff[0,i,:,:],dtype=np.float32))
-    tif.imsave("assembler_testing/act/act%i"%i,np.asarray(raw[i,:,:],dtype=np.float32))
+    tif.imsave("assembler_testing/act0/act0%i"%i,np.asarray(raw[i,:,:],dtype=np.float32))

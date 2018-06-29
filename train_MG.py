@@ -95,9 +95,9 @@ while(a==1):
                 break
 
         for j in range(0, 16):
-            tifffile.imsave("tiffs/pred/predicted_affins%i" % j,
+            tifffile.imsave("tiffs/pred0/predicted_affins%i" % j,
                             np.asarray(pred, dtype=np.float32)[0, j,: , :, 0])
-            tifffile.imsave("tiffs/act/actual_affins%i" % j,
+            tifffile.imsave("tiffs/act0/actual_affins%i" % j,
                             np.asarray(conf_aff, dtype=np.float32)[0, j,:, :, 0])
             tifffile.imsave("tiffs/raw/raw%i" % j,
                             np.asarray(conf_raw, dtype=np.float32)[0, j, :, :, 0])

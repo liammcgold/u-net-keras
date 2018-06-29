@@ -14,7 +14,7 @@ import sklearn
     #   select model to load #
     ##########################
 
-num = 660000
+num = 1020000
 
     #####################
     #   initialize data #
@@ -36,9 +36,25 @@ conf_aff=np.einsum("bczxy->bzxyc",conf_aff)
 
 
 #weights for loss
-weights=sklearn.utils.class_weight.compute_class_weight('balanced',
-                                                        np.unique(aff),
-                                                        aff.flatten())
+weights=np.zeros((3,2))
+
+# weights[0]=sklearn.utils.class_weight.compute_class_weight('balanced',
+#                                                         np.unique(aff[0]),
+#                                                         aff[0].flatten())
+# weights[1]=sklearn.utils.class_weight.compute_class_weight('balanced',
+#                                                         np.unique(aff[1]),
+#                                                         aff[1].flatten())
+# weights[2]=sklearn.utils.class_weight.compute_class_weight('balanced',
+#                                                         np.unique(aff[2]),
+#                                                         aff[2].flatten())
+
+#print(weights)
+
+
+#hard coded for speedup since its always the same
+weights[0]=[ 4.77092571,  0.55853532]
+weights[1]=[25.34738088,  0.51006142]
+weights[2]=[27.62890733,  0.50921526]
 
 
 
@@ -55,7 +71,8 @@ adam= k.optimizers.Adam(lr=.0000025)
 
 WCE=cl.loss()
 
-WCE.set_weight(weights[1]/weights[0])
+#added *2 to see if it improved white to black ratio (too much black)
+WCE.set_weight(weights)
 
 
 #MULTI GPU STUFF!!!!
@@ -70,7 +87,6 @@ else:
     print("\nNo GPU num argument, running in single GPU mode... \n")
 
 model.compile(loss=WCE.weighted_cross,optimizer=adam,metrics=['accuracy'])
-
 
 
 
@@ -115,10 +131,18 @@ while(a==1):
                     break
 
         for j in range(0, 16):
-            tifffile.imsave("tiffs/pred/predicted_affins%i" % j,
+            tifffile.imsave("tiffs/pred0/0predicted_affins%i" % j,
                             np.asarray(pred, dtype=np.float32)[0, j,: , :, 0])
-            tifffile.imsave("tiffs/act/actual_affins%i" % j,
+            tifffile.imsave("tiffs/pred1/1predicted_affins%i" % j,
+                            np.asarray(pred, dtype=np.float32)[0, j,: , :, 1])
+            tifffile.imsave("tiffs/pred2/2predicted_affins%i" % j,
+                            np.asarray(pred, dtype=np.float32)[0, j,: , :, 2])
+            tifffile.imsave("tiffs/act0/0actual_affins%i" % j,
                             np.asarray(conf_aff, dtype=np.float32)[0, j,:, :, 0])
+            tifffile.imsave("tiffs/act1/1actual_affins%i" % j,
+                            np.asarray(conf_aff, dtype=np.float32)[0, j,:, :, 1])
+            tifffile.imsave("tiffs/act2/2actual_affins%i" % j,
+                            np.asarray(conf_aff, dtype=np.float32)[0, j,:, :, 2])
             tifffile.imsave("tiffs/raw/raw%i" % j,
                             np.asarray(conf_raw, dtype=np.float32)[0, j, :, :, 0])
 

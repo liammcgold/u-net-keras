@@ -174,7 +174,7 @@ class assembler(object):
         print("SLICE START:       ", [start_0, start_1, start_2])
         print("SLICE STOP:        ", [stop_0, stop_1, stop_2])
         print("DIMS:              ", [dim_0, dim_1, dim_2])
-        print("AFF GRAPH SIZE:    ",np.shape(self.aff_graph))
+        print("AFF GRAPH SIZE:    ",np.shape(self.0))
         '''
 
 
@@ -282,236 +282,6 @@ class assembler(object):
         else:
             return True
 
-    '''
-    def blend_axis0(self):
-        #blends current slice with preivous slice on axis0
-
-        ##Go back one overlap increment to find start      ##take start and add the shape to it
-        prev_slice = self.aff_graph[:,
-                     int(self.current_loc[0, 0] - self.overlap_increment[0]):int(self.current_loc[0, 0] - self.overlap_increment[0] + self.shape[0]),
-                     int(self.current_loc[1, 0]):int(self.current_loc[1, 0] + self.shape[1]),
-                     int(self.current_loc[2, 0]):int(self.current_loc[2, 0]+ self.shape[2])]
-
-
-
-        blended_slice = blend.blend(prev_slice, self.aff_block, "0+",self.overlap,self.blend_fac)
-
-
-        self.aff_graph[:,
-        int(self.current_loc[0, 0] - self.overlap_increment[0]):int(self.current_loc[0, 0]- self.overlap_increment[0] + np.shape(blended_slice)[1]),
-        int(self.current_loc[1, 0]):int(self.current_loc[1, 0]+np.shape(blended_slice)[2]),
-        int(self.current_loc[2, 0]):int(self.current_loc[2, 0]+np.shape(blended_slice)[3])] = blended_slice
-
-        return blended_slice
-
-    def blend_axis1(self):
-        # blends current slice with preivous slice on axis0
-
-        ##Go back one overlap increment to find start      ##take start and add the shape to it
-        prev_slice = self.aff_graph[:,
-                     int(self.current_loc[0, 0]):int(self.current_loc[0, 0] + self.shape[0]),
-                     int(self.current_loc[1, 0]- self.overlap_increment[1]):int(self.current_loc[1, 0]-self.overlap_increment[1] + self.shape[1]),
-                     int(self.current_loc[2, 0]):int(self.current_loc[2, 0] + self.shape[2])]
-
-        blended_slice = blend.blend(prev_slice, self.aff_block, "1+",self.overlap,self.blend_fac)
-
-
-        self.aff_graph[:,
-        int(self.current_loc[0, 0]):int(self.current_loc[0, 0]+np.shape(blended_slice)[1]),
-        int(self.current_loc[1, 0] - self.overlap_increment[1]):int(self.current_loc[1, 0] - self.overlap_increment[1] + np.shape(blended_slice)[2]),
-        int(self.current_loc[2, 0]):int(self.current_loc[2, 0]+np.shape(blended_slice)[3])] = blended_slice
-        return blended_slice
-
-    def blend_axis2(self):
-        # blends current slice with preivous slice on axis0
-
-        ##Go back one overlap increment to find start      ##take start and add the shape to it
-        prev_slice = self.aff_graph[:,
-                     int(self.current_loc[0, 0]):int(self.current_loc[0, 0] + self.shape[0]),
-                     int(self.current_loc[1, 0]):int(self.current_loc[1, 0] + self.shape[1]),
-                     int(self.current_loc[2, 0]- self.overlap_increment[2]):int(self.current_loc[2, 0]- self.overlap_increment[2] + self.shape[2])]
-
-        blended_slice = blend.blend(prev_slice, self.aff_block, "2+",self.overlap,self.blend_fac)
-
-
-        self.aff_graph[:,
-        int(self.current_loc[0, 0]):int(self.current_loc[0, 0]+np.shape(blended_slice)[1]),
-        int(self.current_loc[1, 0]):int(self.current_loc[1, 0]+np.shape(blended_slice)[2]),
-        int(self.current_loc[2, 0]- self.overlap_increment[2]):int(self.current_loc[2, 0]- self.overlap_increment[2]+np.shape(blended_slice)[3])] = blended_slice
-        return blended_slice
-
-    def half_axis1_blend_axis0(self):
-        #takes lower half on axis 2 of section and blends it with previous slice
-
-        #first save current loc because it will be altered
-        temp_loc=self.current_loc
-        temp_aff_block=self.aff_block
-        temp_shape=self.shape
-
-        #redefine
-        self.shape=np.asarray([self.shape[0],int(self.shape[1]/2),self.shape[2]])
-        self.current_loc=np.asarray([self.current_loc[0],self.current_loc[1]+self.shape[1],self.current_loc[2]])
-        self.aff_block=self.aff_block[:,:,-self.shape[1]:,:]
-
-        #blend under new conditions
-        blended_slice=self.blend_axis0()
-
-
-        #take blended half and add to the block
-        temp_aff_block[:, :, -self.shape[1]:,:] = blended_slice[:, -self.shape[0]:, :, :]
-
-        #reassign all values
-        self.current_loc=temp_loc
-        self.aff_block=temp_aff_block
-        self.shape=temp_shape
-        return blended_slice
-
-    def half_axis2_blend_axis0(self):
-        # takes lower half on axis 3 of section and blends it with previous slice
-
-        # first save current loc because it will be altered
-        temp_loc = self.current_loc
-        temp_aff_block = self.aff_block
-        temp_shape = self.shape
-
-        # redefine
-        self.shape = np.asarray([self.shape[0], self.shape[1],int(self.shape[2] / 2)])
-        self.current_loc = np.asarray([self.current_loc[0],self.current_loc[1],self.current_loc[2] + self.shape[2]])
-        self.aff_block = self.aff_block[:, :,:, -self.shape[2]:]
-
-        # blend under new conditions
-        blended_slice = self.blend_axis0()
-
-        # take blended half and add to the block
-        temp_aff_block[:,:,:, -self.shape[2]:] = blended_slice[:,-self.shape[0]:, :, :]
-
-        # reassign all values
-        self.current_loc = temp_loc
-        self.aff_block = temp_aff_block
-        self.shape = temp_shape
-
-        return blended_slice
-
-    def half_axis2_blend_axis1(self):
-        # takes lower half on axis 3 of section and blends it with previous slice
-
-        # first save current loc because it will be altered
-        temp_loc = self.current_loc
-        temp_aff_block = self.aff_block
-        temp_shape = self.shape
-
-        # redefine
-        self.shape = np.asarray([self.shape[0], self.shape[1], int(self.shape[2] / 2)])
-        self.current_loc = np.asarray([self.current_loc[0], self.current_loc[1],self.current_loc[2] + self.shape[2]])
-        self.aff_block = self.aff_block[:, :, :, -self.shape[2]:]
-
-        # blend under new conditions
-        blended_slice = self.blend_axis1()
-
-        # take blended half and add to the block
-        temp_aff_block[:, :, :, -self.shape[2]:] = blended_slice[:, :, -self.shape[1]:, :]
-
-        # reassign all values
-        self.current_loc = temp_loc
-        self.aff_block = temp_aff_block
-        self.shape = temp_shape
-
-    def half_axis2_half_axis1_blend_axis0_blend_axis1(self):
-        #blend half of lower half of block on axis 0
-
-        # first save current loc because it will be altered
-        temp_loc = self.current_loc
-        temp_aff_block = self.aff_block
-        temp_shape = self.shape
-
-        # redefine
-        self.shape = np.asarray([self.shape[0], self.shape[1], int(self.shape[2] / 2)])
-        self.current_loc = np.asarray([self.current_loc[0], self.current_loc[1],self.current_loc[2] + self.shape[2]])
-        self.aff_block = self.aff_block[:, :, :, -self.shape[2]:]
-
-        #now we have lower half so call half axis1 blend
-        self.half_axis1_blend_axis0()
-        #then blend on axis 1
-        blended_slice=self.blend_axis1()
-
-        #at this point bottom half is completely blended and we must appened it to untouched top half
-
-        #take blended half and add to the block
-        temp_aff_block[:, :,:, -self.shape[2]:] = blended_slice[:, :, -self.shape[1]:, :]
-
-
-        # reassign all values
-        self.current_loc = temp_loc
-        self.aff_block = temp_aff_block
-        self.shape = temp_shape
-        return blended_slice
-    '''
-
-    '''
-    def blend_block(self):
-
-        #row is itterated first then column then layer
-        #axis1=row axis2=col axis3=layer
-
-        #if first one add to corner
-        if(self.counter==0):
-            self.aff_graph[:,0:self.shape[0],0:self.shape[1],0:self.shape[2]]=self.aff_block
-
-        #if in first column and layer
-        if(self.dict["+0"]==False and self.dict["+1"]==True and self.dict["+2"]==True):
-            self.blend_axis0()
-
-
-        #if in first row but not first column and in first layer
-        if(self.dict["+0"]==True and self.dict["+1"]==False and self.dict["+2"]==True):
-            self.blend_axis1()
-
-
-        #if not in first row or column but in first layer
-        if(self.dict["+0"]==False and self.dict["+1"]==False and self.dict["+2"]==True):
-            self.half_axis1_blend_axis0()
-            self.blend_axis1()
-
-
-        #if first row and column but not first layer
-        if (self.dict["+0"] == True and self.dict["+1"] == True and self.dict["+2"] == False):
-            self.blend_axis2()
-
-        
-        #if not first row but fist column and not first layer
-        if (self.dict["+0"] == False and self.dict["+1"] == True and self.dict["+2"] == False):
-            self.half_axis2_blend_axis0()
-            self.blend_axis2()
-
-
-        #if first row but not first column or layer
-        if (self.dict["+0"] == True and self.dict["+1"] == False and self.dict["+2"] == False):
-            self.half_axis2_blend_axis1()
-            self.blend_axis2()
-
-
-        #if not first row, column or layer
-        if (self.dict["+0"] == False and self.dict["+1"] == False and self.dict["+2"] == False):
-            #blend bottom half same way as "if not in first row or column but in first layer" then blend axis2
-            self.half_axis2_half_axis1_blend_axis0_blend_axis1()
-            self.blend_axis2()
-        
-    '''
-
-    '''
-    def bump_blend(self):
-        self.bump()
-
-
-    def bump(self):
-        centers=[int(np.shape(self.aff_block)[1]/2),int(np.shape(self.aff_block)[2]/2),int(np.shape(self.aff_block)[3]/2)]
-        for i in range(0,np.shape(self.aff_block)[1]):
-            for j in range(0,np.shape(self.aff_block)[2]):
-                for k in range(0,np.shape(self.aff_block)[3]):
-                    #value=
-                    self.aff_block[:,i,j,k]=np.multiply(self.aff_block[:,i,j,k],value)
-'''
-
     def blend_block_using_blend_function(self):
 
 
@@ -596,12 +366,8 @@ class assembler(object):
                      0:self.shape[1],
                      0:self.shape[2]]
 
-        #print(np.shape(prev_slice))
-        #print(np.shape(self.aff_block))
-
 
         blended_slice = blend.blend(prev_slice, self.aff_block, "0+", self.overlap, self.blend_fac)
-        #tif.imsave("misc/blnd",np.asarray(blended_slice[0,:,:,54],dtype=np.float32))
 
 
         self.buffer0[:,
@@ -628,7 +394,7 @@ class assembler(object):
 
         self.aff_graph[:,:,:,int(self.current_loc[2,0]-self.overlap_increment[2]):int(self.current_loc[2,0]-self.overlap_increment[2]+np.shape(blended_slice)[3])]=blended_slice
 
-        #self.aff_graph[:,:,:,-20:]=1
+        #self.0[:,:,:,-20:]=1
 
     def crop_aff(self):
         self.aff_graph = np.asarray(self.aff_graph)[:, 0:self.raw_shape[0] , 0:self.raw_shape[1] , 0:self.raw_shape[2] ]

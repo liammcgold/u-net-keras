@@ -71,4 +71,4 @@ if truth_table==0:
 
 
 for i in range(0,np.shape(seg)[0]):
-    tif.imsave("watershed_tiffs/pred%i.tiff"%i,np.asarray(seg[i],dtype=np.float32))
+    tif.imsave("watershed_tiffs/pred0%i.tiff"%i,np.asarray(seg[i],dtype=np.float32))

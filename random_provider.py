@@ -2,6 +2,9 @@ import numpy as np
 
 
 def random_provider_affin(shape,raw,affin):
+
+
+
     x=int(np.random.random()*(np.shape(raw)[0]-shape[0]))
     y=int(np.random.random()*(np.shape(raw)[1]-shape[1]))
     z=int(np.random.random()*(np.shape(raw)[2]-shape[2]))
@@ -11,6 +14,10 @@ def random_provider_affin(shape,raw,affin):
     aff_out[0]=affin[:,x:x+shape[0],y:y+shape[1],z:z+shape[2]]
     raw_out=np.einsum("bczxy->bzxyc",raw_out)
     aff_out = np.einsum("bczxy->bzxyc", aff_out)
+
+    #if (np.random.random() > .5):
+    ##    raw_out = np.einsum("bczxy->bczyx", raw_out)
+     #  aff_out = np.einsum("bczxy->bczyx", aff_out)
 
 
     return raw_out,aff_out
