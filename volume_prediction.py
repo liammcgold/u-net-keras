@@ -6,7 +6,7 @@ import u_net_MG
 
 model=u_net_MG.make()
 
-itteration=900000
+itteration=1040000
 
 model.load_weights("saved_models_MG/model%i"%itteration)
 
