@@ -10,13 +10,14 @@ import sys
 import tifffile
 import sklearn
 import time
+import malis_loss
 
 
     ##########################
     #   select model to load #
     ##########################
 
-num = 1040000
+num = 1699452
 
     #####################
     #   initialize data #
@@ -28,10 +29,9 @@ aff=np.load("./data/spir_aff_2.npy")
 gt=np.load("./data/spir_gt.npy")
 
 
-print(np.shape(aff))
 
 
-loss_info=np.zeros(np.shape(aff)[0]+1,np.shape(aff)[1],np.shape(aff)[2],np.shape(aff)[3])
+loss_info=np.zeros((np.shape(aff)[0]+1,np.shape(aff)[1],np.shape(aff)[2],np.shape(aff)[3]))
 
 loss_info[0:3]=aff
 loss_info[3]=gt
@@ -47,6 +47,8 @@ conf_aff=np.zeros((1,3,16,128,128))
 conf_aff[0]=aff[:,200:216,200:328,200:328]
 conf_aff=np.einsum("bczxy->bzxyc",conf_aff)
 
+
+conf_gt=gt[200:216,200:328,200:328]
 
 
 
@@ -86,6 +88,7 @@ model.load_weights("saved_models_MG/model%i"%num)
 
 adam= k.optimizers.Adam(lr=.0000025)
 
+loss=malis_loss.mal((16,128,128))
 
 
 
@@ -103,7 +106,7 @@ if (len(sys.argv)>1):
 else:
     print("\nNo GPU num argument, running in single GPU mode... \n")
 
-model.compile(loss=WCE.weighted_cross,optimizer=adam,metrics=['accuracy'])
+model.compile(loss=loss.malis,optimizer=adam,metrics=['accuracy'])
 
 
 
@@ -127,13 +130,13 @@ try:
             #   grab random slices  #
             #########################
 
-        raw_in,aff_in=rp.random_provider_affin((16,128,128),raw,aff)
+        raw_in,loss_info_in=rp.random_provider_loss_info((16,128,128),raw,loss_info)
 
             #############
             #   train   #
             #############
 
-        model.fit(raw_in,aff_in,epochs=1)
+        model.fit(raw_in,loss_info_in,epochs=1)
 
 
 
@@ -166,6 +169,8 @@ try:
                                 np.asarray(conf_aff, dtype=np.float32)[0, j,:, :, 2])
                 tifffile.imsave("tiffs/raw/raw%i" % j,
                                 np.asarray(conf_raw, dtype=np.float32)[0, j, :, :, 0])
+                tifffile.imsave("tiffs/gt/gt%i" % j,
+                                np.asarray(conf_gt, dtype=np.float32)[j, :, :])
 
 
             np.save("data_out/prediction",pred)

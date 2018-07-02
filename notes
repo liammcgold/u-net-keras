@@ -4,3 +4,5 @@
 -650 looks REALLY good
 -780 looks ok, may have gone into overtraining though.
 -Assembler is running however there are irregularities in the output.
+-trained unti 1.04 mil with bad affins, fixed and trained with cross etropy weighted until 1,699,452 switched to malis
+
